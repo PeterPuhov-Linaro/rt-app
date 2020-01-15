@@ -796,16 +796,16 @@ static void parse_numa_data(struct json_object *obj, numaset_data_t *data)
 			log_critical(PIN2 "NUMA is not available");
 			exit(EXIT_INV_CONFIG);
 		}
-#else
-		log_critical(PIN2 "NUMA library is not configured");
-		exit(EXIT_INV_CONFIG);
-#endif
 		data->numaset = numa_parse_nodestring(data->numaset_str);
 		if(data->numaset == NULL) {
 			log_critical(PIN2 "nodestring is invalid");
 			exit(EXIT_INV_CONFIG);
 		}
 		log_info(PIN "key: nodes %s", data->numaset_str);
+#else
+		log_critical(PIN2 "NUMA library is not configured");
+		exit(EXIT_INV_CONFIG);
+#endif
 	}
 }
 
