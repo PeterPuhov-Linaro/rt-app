@@ -785,6 +785,48 @@ static void parse_cpuset_data(struct json_object *obj, cpuset_data_t *data)
 	log_info(PIN "key: cpus %s", data->cpuset_str);
 }
 
+static void parse_numa_data(struct json_object *obj, numaset_data_t *data)
+{
+	struct json_object *numaset_obj, *node;
+	data->numaset = NULL;
+	data->numaset_str = NULL;
+
+	numaset_obj = get_in_object(obj, "nodes", TRUE);
+	if (numaset_obj) {
+		unsigned int i;
+		unsigned int node_idx;
+		unsigned int max_node;
+
+#if HAVE_LIBNUMA
+		if(numa_available() == -1)
+#endif
+		{
+			log_critical(PIN2 "NUMA is not available");
+			exit(EXIT_INV_CONFIG);
+		}
+
+		/* Get highest node number available on the current system */
+		max_node = numa_max_node();
+
+		assure_type_is(numaset_obj, obj, "nodes", json_type_array);
+		data->numaset_str = strdup(json_object_to_json_string(numaset_obj));
+		data->numaset = numa_allocate_nodemask();
+		numa_bitmask_clearall(data->numaset);
+		for (i = 0; i < json_object_array_length(numaset_obj); i++) {
+			node = json_object_array_get_idx(numaset_obj, i);
+			node_idx = json_object_get_int(node);
+			if (node_idx > max_node) {
+				numa_bitmask_free(data->numaset);
+				log_critical(PIN2 "Invalid node %u in numaset %s", node_idx, data->numaset_str);
+				free(data->numaset_str);
+				exit(EXIT_INV_CONFIG);
+			}
+			numa_bitmask_setbit(data->numaset, node_idx);
+		}
+		log_info(PIN "key: nodes %s", data->numaset_str);
+	}
+}
+
 static sched_data_t *parse_sched_data(struct json_object *obj, int def_policy)
 {
 	sched_data_t tmp_data;
@@ -997,6 +1039,9 @@ parse_task_data(char *name, struct json_object *obj, int index,
 	data->def_cpu_data.cpuset = NULL;
 	data->def_cpu_data.cpuset_str = NULL;
 
+	data->numa_data.numaset = NULL;
+	data->numa_data.numaset_str = NULL;
+
 	/* cpuset */
 	parse_cpuset_data(obj, &data->cpu_data);
 	/* Scheduling policy */
@@ -1013,6 +1058,9 @@ parse_task_data(char *name, struct json_object *obj, int index,
 
 	/* initial delay */
 	data->delay = get_int_value_from(obj, "delay", TRUE, 0);
+
+	/* numa */
+	parse_numa_data(obj, &data->numa_data);
 
 	/* It's the responsibility of the caller to set this if we were forked */
 	data->forked = 0;

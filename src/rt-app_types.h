@@ -23,9 +23,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define _RTAPP_TYPES_H_
 
 #include <pthread.h>
-
 #include "config.h"
 #include "dl_syscalls.h"
+
+#if HAVE_LIBNUMA
+#include <numa.h>
+#endif
 
 #define RTAPP_POLICY_DESCR_LENGTH 16
 #define RTAPP_RESOURCE_DESCR_LENGTH 16
@@ -169,6 +172,11 @@ typedef struct _cpuset_data_t {
 	size_t cpusetsize;
 } cpuset_data_t;
 
+typedef struct _numaset_data_t {
+	struct bitmask * numaset;
+	char *numaset_str;
+} numaset_data_t;
+
 typedef struct _sched_data_t {
 	policy_t policy;
 	int prio;
@@ -202,6 +210,8 @@ typedef struct _thread_data_t {
 	cpuset_data_t cpu_data; /* cpu set information */
 	cpuset_data_t *curr_cpu_data; /* Current cpu set being used */
 	cpuset_data_t def_cpu_data; /* Default cpu set for task */
+
+	numaset_data_t numa_data; /* numa interleave mask */
 
 	sched_data_t *sched_data; /* scheduler policy information */
 	sched_data_t *curr_sched_data; /* current scheduler policy */

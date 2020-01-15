@@ -1042,6 +1042,14 @@ void *thread_body(void *arg)
 		perror("pthread_setname_np thread name over 16 characters");
 	}
 
+#if HAVE_LIBNUMA
+	/* Set numa memory binding */
+	if(data->numa_data.numaset != NULL) {
+		numa_set_membind(data->numa_data.numaset);
+		log_notice("[%d] numa_set_membind %s \n", data->ind, data->numa_data.numaset_str);
+	}
+#endif
+
 	/* Get the 1st phase's data */
 	pdata = &data->phases[0];
 
