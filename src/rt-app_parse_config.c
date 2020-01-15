@@ -785,6 +785,30 @@ static void parse_cpuset_data(struct json_object *obj, cpuset_data_t *data)
 	log_info(PIN "key: cpus %s", data->cpuset_str);
 }
 
+static void parse_numa_data(struct json_object *obj, numaset_data_t *data)
+{
+	data->numaset = NULL;
+	data->numaset_str = get_string_value_from(obj, "nodes", TRUE, NULL);
+
+	if(data->numaset_str != NULL) {
+#if HAVE_LIBNUMA
+		if(numa_available() == -1){
+			log_critical(PIN2 "NUMA is not available");
+			exit(EXIT_INV_CONFIG);
+		}
+#else
+		log_critical(PIN2 "NUMA library is not configured");
+		exit(EXIT_INV_CONFIG);
+#endif
+		data->numaset = numa_parse_nodestring(data->numaset_str);
+		if(data->numaset == NULL) {
+			log_critical(PIN2 "nodestring is invalid");
+			exit(EXIT_INV_CONFIG);
+		}
+		log_info(PIN "key: nodes %s", data->numaset_str);
+	}
+}
+
 static sched_data_t *parse_sched_data(struct json_object *obj, int def_policy)
 {
 	sched_data_t tmp_data;
@@ -997,6 +1021,9 @@ parse_task_data(char *name, struct json_object *obj, int index,
 	data->def_cpu_data.cpuset = NULL;
 	data->def_cpu_data.cpuset_str = NULL;
 
+	data->numa_data.numaset = NULL;
+	data->numa_data.numaset_str = NULL;
+
 	/* cpuset */
 	parse_cpuset_data(obj, &data->cpu_data);
 	/* Scheduling policy */
@@ -1013,6 +1040,9 @@ parse_task_data(char *name, struct json_object *obj, int index,
 
 	/* initial delay */
 	data->delay = get_int_value_from(obj, "delay", TRUE, 0);
+
+	/* numa */
+	parse_numa_data(obj, &data->numa_data);
 
 	/* It's the responsibility of the caller to set this if we were forked */
 	data->forked = 0;
