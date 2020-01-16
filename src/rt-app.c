@@ -1046,12 +1046,7 @@ void *thread_body(void *arg)
 	/* Set numa memory binding */
 	if(data->numa_data.numaset != NULL) {
 		numa_set_membind(data->numa_data.numaset);
-		ret = numa_run_on_node_mask(data->numa_data.numaset);
 		log_notice("[%d] numa_set_membind %s \n", data->ind, data->numa_data.numaset_str);
-		if(ret != 0) {
-			perror("numa_run_on_node_mask");
-			exit(EXIT_FAILURE);
-		}
 	}
 #endif
 
