@@ -817,6 +817,7 @@ static void parse_numa_data(struct json_object *obj, numaset_data_t *data)
 			node_idx = json_object_get_int(node);
 			if (node_idx > max_node) {
 				numa_bitmask_free(data->numaset);
+				free(data->numaset_str);
 				log_critical(PIN2 "Invalid node %u in numaset %s", node_idx, data->numaset_str);
 				exit(EXIT_INV_CONFIG);
 			}
