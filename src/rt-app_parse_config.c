@@ -999,6 +999,7 @@ parse_task_phase_data(struct json_object *obj,
 		}
 	}
 	parse_cpuset_data(obj, &data->cpu_data);
+	parse_numa_data(obj, &data->numa_data);
 	data->sched_data = parse_sched_data(obj, -1);
 	data->taskgroup_data = parse_taskgroup_data(obj);
 }
@@ -1041,9 +1042,14 @@ parse_task_data(char *name, struct json_object *obj, int index,
 
 	data->numa_data.numaset = NULL;
 	data->numa_data.numaset_str = NULL;
+	data->curr_numa_data = NULL;
+	data->def_numa_data.numaset = NULL;
+	data->def_numa_data.numaset_str = NULL;
 
 	/* cpuset */
 	parse_cpuset_data(obj, &data->cpu_data);
+	/* numa */
+	parse_numa_data(obj, &data->numa_data);
 	/* Scheduling policy */
 	data->sched_data = parse_sched_data(obj, opts->policy);
 	/* Taskgroup */
@@ -1058,9 +1064,6 @@ parse_task_data(char *name, struct json_object *obj, int index,
 
 	/* initial delay */
 	data->delay = get_int_value_from(obj, "delay", TRUE, 0);
-
-	/* numa */
-	parse_numa_data(obj, &data->numa_data);
 
 	/* It's the responsibility of the caller to set this if we were forked */
 	data->forked = 0;

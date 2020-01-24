@@ -272,6 +272,48 @@ inherit the affinity from the task level):
 	}
 }
 
+*** NUMA memory binding
+
+* nodes: Array of Integer. Define the NUMA binding of the thread. 
+Default value is all NUMA nodes of the system. An example :  "nodes" : [0, 2, 3]
+
+"nodes" can be specified at task level or phase level. As an example, below
+creates two threads. One thread will run with memory binding to nodes 2 and 3. The
+second task will run first phase with memory binding to nodes 0 and 1, 
+second phase with memory binding to node 2, 
+and the third phase with memory binding to nodes 4, 5, and 6 (it will inherit memory binding from the task level):
+
+"tasks" : {
+    "thread1" : {
+        "nodes" : [2,3],
+        "phases" : {
+            "phase1" : {
+                "run" : 10,
+                "sleep" : 10
+            }
+        }
+    }
+    "thread2" : {
+        "nodes" : [4,5,6],
+        "phases" : {
+            "phase1" : {
+                "nodes" : [0,1],
+                "run" : 10,
+                "sleep" : 10
+            }
+            "phase2" : {
+                "nodes" : [2],
+                "run" : 10,
+                "sleep" : 10
+            }
+            "phase3" : {
+                "run" : 10,
+                "sleep" : 10
+            }
+        }
+    }
+}
+
 *** Utilization Clamping
 
 util_min: Integer. Can be specified at task level or phase level. Sets the min

@@ -197,6 +197,7 @@ typedef struct _phase_data_t {
 	event_data_t *events;
 	int nbevents;
 	cpuset_data_t cpu_data;
+	numaset_data_t numa_data;
 	sched_data_t *sched_data;
 	taskgroup_data_t *taskgroup_data;
 } phase_data_t;
@@ -211,7 +212,9 @@ typedef struct _thread_data_t {
 	cpuset_data_t *curr_cpu_data; /* Current cpu set being used */
 	cpuset_data_t def_cpu_data; /* Default cpu set for task */
 
-	numaset_data_t numa_data; /* numa interleave mask */
+	numaset_data_t numa_data; /* numa bind set mask */
+	numaset_data_t *curr_numa_data; /* Current numa bind set being used */
+	numaset_data_t def_numa_data; /* Default numa bind set for task */
 
 	sched_data_t *sched_data; /* scheduler policy information */
 	sched_data_t *curr_sched_data; /* current scheduler policy */
