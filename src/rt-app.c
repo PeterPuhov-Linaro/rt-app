@@ -849,104 +849,24 @@ static void set_thread_affinity(thread_data_t *data, cpuset_data_t *cpu_data)
 	}
 }
 
-#if HAVE_LIBNUMA
-static int create_numaset_str(numaset_data_t *numa_data)
-{
-	unsigned int i;
-	unsigned int idx = 0;
-
-	int node_count = numa_bitmask_weight(numa_data->numaset);
-
-	/*
-	 * Assume we have less than 99 NUMA nodes
-	 * in the system.
-	 * Each node would take up to 2 + 2
-	 * bytes (2 for the number and 2 for the comma and space). 2 bytes
-	 * for beginning bracket + space and 2 bytes for end bracket and space
-	 * and finally null-terminator.
-	 */
-	unsigned int size_needed = node_count * 4 + 2 + 2 + 1;
-
-	numa_data->numaset_str = malloc(size_needed);
-	if (!numa_data->numaset_str) {
-		log_error("Failed to set numaset string");
-		return -1;
-	}
-
-	strcpy(numa_data->numaset_str, "[ ");
-	idx += 2;
-
-	for (i = 0; i < 100 && node_count; ++i) {
-		unsigned int n;
-
-		if (numa_bitmask_isbitset(numa_data->numaset, i)) {
-			--node_count;
-			if (size_needed <= (idx + 1)) {
-				log_error("Not enough memory for array");
-				exit(EXIT_FAILURE);
-			}
-			n = snprintf(&numa_data->numaset_str[idx],
-						size_needed - idx - 1, "%u", i);
-			if (n > 0) {
-				idx += n;
-			} else {
-				log_error("Error creating array");
-				exit(EXIT_FAILURE);
-			}
-			if (size_needed <= (idx + 1)) {
-				log_error("Not enough memory for array");
-				exit(EXIT_FAILURE);
-			}
-			if (node_count) {
-				strncat(numa_data->numaset_str, ", ",
-							size_needed - idx - 1);
-				idx += 2;
-			}
-		}
-	}
-	strncat(numa_data->numaset_str, " ]", size_needed - idx - 1);
-
-	return 0;
-}
-#endif
-
 static void set_thread_membind(thread_data_t *data, numaset_data_t * numa_data)
 {
 #if HAVE_LIBNUMA
-	numaset_data_t *actual_numa_data = &data->numa_data;
+	if (numa_data->numaset == NULL)
+		return;
 
-	if (data->def_numa_data.numaset == NULL) {
-		/* Get default numa bind mask */
-		data->def_numa_data.numaset = numa_get_membind();
+	if(data->curr_numa_data == numa_data)
+		return;
 
-		create_numaset_str(&data->def_numa_data);
-		log_notice("[%d] default numa_set_membind %s \n", data->ind,
-				data->def_numa_data.numaset_str);
-
-		data->curr_numa_data = &data->def_numa_data;
-	}
-
-	/*
-	 * Order of preference:
-	 * 1. Phase numaset
-	 * 2. Task level numaset
-	 * 3. Default numaset
-	 */
-	if (numa_data->numaset != NULL)
-		actual_numa_data = numa_data;
-
-	if (actual_numa_data->numaset == NULL)
-		actual_numa_data = &data->def_numa_data;
-
-	if (!numa_bitmask_equal(actual_numa_data->numaset, data->curr_numa_data->numaset))
+	if (data->curr_numa_data == NULL ||
+			!numa_bitmask_equal(numa_data->numaset, data->curr_numa_data->numaset))
 	{
-		log_debug("[%d] setting numa_membind to Nodes (s) %s", data->ind,
-				actual_numa_data->numaset_str);
+		log_debug("[%d] setting numa_membind to Node (s) %s", data->ind,
+				numa_data->numaset_str);
 
-		numa_set_membind(actual_numa_data->numaset);
-
-		data->curr_numa_data = actual_numa_data;
+		numa_set_membind(numa_data->numaset);
 	}
+	data->curr_numa_data = numa_data;
 #endif
 }
 
@@ -1218,6 +1138,7 @@ void *thread_body(void *arg)
 			data->ind, policy_to_string(data->sched_data->policy),
 			data->sched_data->prio);
 	set_thread_priority(data, data->sched_data);
+	set_thread_membind(data, &data->numa_data);
 	set_thread_taskgroup(data, data->taskgroup_data);
 
 	/*

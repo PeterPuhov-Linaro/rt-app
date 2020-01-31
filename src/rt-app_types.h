@@ -214,7 +214,6 @@ typedef struct _thread_data_t {
 
 	numaset_data_t numa_data; /* numa bind set mask */
 	numaset_data_t *curr_numa_data; /* Current numa bind set being used */
-	numaset_data_t def_numa_data; /* Default numa bind set for task */
 
 	sched_data_t *sched_data; /* scheduler policy information */
 	sched_data_t *curr_sched_data; /* current scheduler policy */

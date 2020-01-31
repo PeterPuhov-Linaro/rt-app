@@ -1043,8 +1043,6 @@ parse_task_data(char *name, struct json_object *obj, int index,
 	data->numa_data.numaset = NULL;
 	data->numa_data.numaset_str = NULL;
 	data->curr_numa_data = NULL;
-	data->def_numa_data.numaset = NULL;
-	data->def_numa_data.numaset_str = NULL;
 
 	/* cpuset */
 	parse_cpuset_data(obj, &data->cpu_data);
