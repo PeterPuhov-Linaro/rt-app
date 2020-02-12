@@ -863,7 +863,6 @@ static void set_thread_membind(thread_data_t *data, numaset_data_t * numa_data)
 	{
 		log_debug("[%d] setting numa_membind to Node (s) %s", data->ind,
 				numa_data->numaset_str);
-
 		numa_set_membind(numa_data->numaset);
 	}
 	data->curr_numa_data = numa_data;
@@ -1156,8 +1155,8 @@ void *thread_body(void *arg)
 		struct timespec t_diff, t_rel_start;
 
 		set_thread_affinity(data, &pdata->cpu_data);
-		set_thread_membind(data, &pdata->numa_data);
 		set_thread_priority(data, pdata->sched_data);
+		set_thread_membind(data, &pdata->numa_data);
 		set_thread_taskgroup(data, pdata->taskgroup_data);
 
 		log_ftrace(ft_data.marker_fd, FTRACE_LOOP,
